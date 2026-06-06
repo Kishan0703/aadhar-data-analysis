@@ -3,665 +3,268 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-from datetime import datetime, timedelta
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
-# Page config
-st.set_page_config(
-    page_title="Aadhaar Demographics Analysis",
-    page_icon="🇮🇳",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Aadhaar Analysis", page_icon="🇮🇳", layout="wide")
 
-# Modern CSS styling
-st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    .main {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    }
-    
-    .stMetric {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 15px;
-        padding: 20px;
-        color: white;
-        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
-    }
-    
-    .stMetric > label {
-        color: rgba(255,255,255,0.9) !important;
-        font-size: 0.9rem !important;
-        font-weight: 500 !important;
-    }
-    
-    .stMetric > div {
-        color: white !important;
-        font-size: 2rem !important;
-        font-weight: 700 !important;
-    }
-    
-    h1 {
-        background: linear-gradient(90deg, #667eea, #764ba2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
-        font-family: 'Inter', sans-serif;
-    }
-    
-    h2, h3 {
-        color: #2d3748;
-        font-family: 'Inter', sans-serif;
-        font-weight: 600;
-    }
-    
-    .stDataFrame {
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    
-    .insight-card {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        margin: 10px 0;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border-left: 5px solid #667eea;
-    }
-    
-    .insight-title {
-        color: #667eea;
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-bottom: 8px;
-    }
-    
-    .insight-text {
-        color: #4a5568;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
-    
-    .warning-box {
-        background: #fff3cd;
-        border-left: 5px solid #ffc107;
-        padding: 15px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    
-    .success-box {
-        background: #d4edda;
-        border-left: 5px solid #28a745;
-        padding: 15px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    
-    .danger-box {
-        background: #f8d7da;
-        border-left: 5px solid #dc3545;
-        padding: 15px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        padding-left: 20px;
-        padding-right: 20px;
-        background-color: #f7fafc;
-        border-radius: 10px 10px 0 0;
-        font-weight: 500;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white !important;
-    }
-    
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    section[data-testid="stSidebar"] .stMarkdown,
-    section[data-testid="stSidebar"] label,
-    section[data-testid="stSidebar"] h1,
-    section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3 {
-        color: white !important;
-    }
-    
-    .stSidebar .stMultiSelect label,
-    .stSidebar .stDateInput label {
-        color: white !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# State name standardization function
-def standardize_state_names(df):
-    """Fix inconsistent state names"""
-    state_mapping = {
-        'West Bangal': 'West Bengal',
-        'West  Bengal': 'West Bengal',
-        'Westbengal': 'West Bengal',
-        'WEST BENGAL': 'West Bengal',
-        'WESTBENGAL': 'West Bengal',
-        'West bengal': 'West Bengal',
-        'west Bengal': 'West Bengal',
-        'West Bengli': 'West Bengal',
-        'andhra pradesh': 'Andhra Pradesh',
-        'ODISHA': 'Odisha',
-        'odisha': 'Odisha',
-        'Orissa': 'Odisha',
-        'Jammu & Kashmir': 'Jammu and Kashmir',
-        'Dadra & Nagar Haveli': 'Dadra and Nagar Haveli',
-        'Daman & Diu': 'Daman and Diu',
-        'Andaman & Nicobar Islands': 'Andaman and Nicobar Islands'
-    }
-    df['state'] = df['state'].replace(state_mapping)
-    return df
+STATE_MAP = {
+    "West Bangal": "West Bengal", "West  Bengal": "West Bengal", "Westbengal": "West Bengal",
+    "WEST BENGAL": "West Bengal", "WESTBENGAL": "West Bengal", "West bengal": "West Bengal",
+    "west Bengal": "West Bengal", "West Bengli": "West Bengal", "andhra pradesh": "Andhra Pradesh",
+    "ODISHA": "Odisha", "odisha": "Odisha", "Orissa": "Odisha",
+    "Jammu & Kashmir": "Jammu and Kashmir", "Dadra & Nagar Haveli": "Dadra and Nagar Haveli",
+    "Daman & Diu": "Daman and Diu", "Andaman & Nicobar Islands": "Andaman and Nicobar Islands",
+}
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv('data.csv', dtype={
-        'state': 'category',
-        'district': 'category',
-        'pincode': 'Int32',
-        'demo_age_5_17': 'Int32',
-        'demo_age_17_': 'Int32'
-    })
-    df['pincode'] = df['pincode'].fillna(0).astype(int)
-    df['demo_age_5_17'] = df['demo_age_5_17'].fillna(0).astype(int)
-    df['demo_age_17_'] = df['demo_age_17_'].fillna(0).astype(int)
-    df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
-    df = df.rename(columns={'demo_age_17_': 'demo_age_18_plus'})
-    
-    # Remove duplicates
+    df = pd.read_csv("data.csv")
+    df["date"] = pd.to_datetime(df["date"], format="%d-%m-%Y")
+    df = df.rename(columns={"demo_age_17_": "demo_age_18_plus"})
+    df["demo_age_5_17"] = df["demo_age_5_17"].fillna(0).astype(int)
+    df["demo_age_18_plus"] = df["demo_age_18_plus"].fillna(0).astype(int)
     before = len(df)
     df = df.drop_duplicates()
-    after = len(df)
-    
-    # Standardize state names
-    df = standardize_state_names(df)
-    
-    df['total_enrolments'] = df['demo_age_5_17'] + df['demo_age_18_plus']
-    df['child_pct'] = np.where(df['total_enrolments'] > 0,
-                               (df['demo_age_5_17'] / df['total_enrolments']) * 100, 0)
-    df['month_name'] = df['date'].dt.month_name()
-    df['day_name'] = df['date'].dt.day_name()
-    df['is_weekend'] = df['date'].dt.dayofweek.isin([5,6]).astype(int)
-    
-    return df, before - after
+    df["state"] = df["state"].replace(STATE_MAP)
+    df["total"] = df["demo_age_5_17"] + df["demo_age_18_plus"]
+    df["child_pct"] = np.where(df["total"] > 0, df["demo_age_5_17"] / df["total"] * 100, 0)
+    df["month"] = df["date"].dt.to_period("M").astype(str)
+    df["day_name"] = df["date"].dt.day_name()
+    return df, before - len(df)
 
-@st.cache_data
-def compute_aggregates(df):
-    # Daily
-    daily = df.groupby('date').agg({
-        'demo_age_5_17': 'sum',
-        'demo_age_18_plus': 'sum',
-        'total_enrolments': 'sum'
-    }).reset_index().sort_values('date')
-    daily['child_pct'] = (daily['demo_age_5_17'] / daily['total_enrolments']) * 100
+df, dupes = load_data()
 
-    # State summary
-    state_summary = df.groupby('state').agg({
-        'demo_age_5_17': 'sum',
-        'demo_age_18_plus': 'sum',
-        'total_enrolments': 'sum',
-        'district': 'nunique',
-        'pincode': 'nunique'
-    }).reset_index()
-    state_summary.columns = ['state', 'total_children', 'total_adults', 'total_enrolments', 'num_districts', 'num_pincodes']
-    state_summary['child_pct'] = (state_summary['total_children'] / state_summary['total_enrolments']) * 100
-    state_summary = state_summary.sort_values('total_enrolments', ascending=False).reset_index(drop=True)
+# ── Sidebar ────────────────────────────────────────────────────────────────────
+st.sidebar.title("🇮🇳 Aadhaar Dashboard")
+st.sidebar.caption(f"~{len(df)/1e6:.1f}M records · {dupes:,} dupes removed")
 
-    # Monthly
-    monthly = df.groupby(['month_name']).agg({
-        'total_enrolments': 'sum',
-        'demo_age_5_17': 'sum'
-    }).reset_index()
-    monthly['child_pct'] = (monthly['demo_age_5_17'] / monthly['total_enrolments']) * 100
+all_states = sorted(df["state"].unique())
+selected_states = st.sidebar.multiselect("Filter by State", all_states, default=all_states)
 
-    # District
-    district_summary = df.groupby(['state','district']).agg({
-        'total_enrolments': 'sum',
-        'demo_age_5_17': 'sum'
-    }).reset_index()
-    district_summary['child_pct'] = (district_summary['demo_age_5_17'] / district_summary['total_enrolments']) * 100
-    district_summary = district_summary.sort_values('total_enrolments', ascending=False).reset_index(drop=True)
+date_min, date_max = df["date"].min().date(), df["date"].max().date()
+d1, d2 = st.sidebar.date_input("Date range", [date_min, date_max], min_value=date_min, max_value=date_max)
 
-    # Clusters
-    cluster_features = state_summary[['total_enrolments','total_children','total_adults','num_districts','num_pincodes','child_pct']]
-    scaler = StandardScaler()
-    scaled = scaler.fit_transform(cluster_features)
-    kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
-    state_summary['cluster'] = kmeans.fit_predict(scaled)
+mask = (df["state"].isin(selected_states)) & (df["date"] >= pd.Timestamp(d1)) & (df["date"] <= pd.Timestamp(d2))
+fdf = df[mask]
 
-    return daily, state_summary, monthly, district_summary
+st.sidebar.markdown("---")
+st.sidebar.markdown("**⚠️ Known Issues**")
+st.sidebar.markdown("- August 2025 data missing\n- 9 variants of 'West Bengal' in raw data\n- CV = 220% (extreme volatility)")
 
-# Load data
-try:
-    df, duplicates_removed = load_data()
-    daily, state_summary, monthly, district_summary = compute_aggregates(df)
-except Exception as e:
-    st.error(f"Error loading data: {e}")
-    st.stop()
+# ── Header ─────────────────────────────────────────────────────────────────────
+st.title("🇮🇳 Aadhaar Enrollment Analysis")
 
-# Sidebar filters
-st.sidebar.markdown("### 🎛️ Filters")
-all_states = sorted(df['state'].unique().tolist())
-selected_states = st.sidebar.multiselect("Select States", all_states, default=all_states[:10])
-
-date_min = df['date'].min().date()
-date_max = df['date'].max().date()
-date_range = st.sidebar.date_input("Date Range", [date_min, date_max], min_value=date_min, max_value=date_max)
-
-if len(date_range) == 2:
-    df_filtered = df[(df['state'].isin(selected_states)) & 
-                     (df['date'] >= pd.Timestamp(date_range[0])) & 
-                     (df['date'] <= pd.Timestamp(date_range[1]))]
-else:
-    df_filtered = df[df['state'].isin(selected_states)]
-
-# Header
-st.title("🇮🇳 Aadhaar Demographics Analysis")
-st.markdown("**Deep insights from 36M+ enrollment records across India**")
-st.markdown("---")
-
-# KEY INSIGHTS SECTION (Important!)
-st.markdown("## 🔍 Key Insights & Findings")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("""
-    <div class="insight-card">
-        <div class="insight-title">⚠️ Critical Data Quality Issues</div>
-        <div class="insight-text">
-        • <b>9 variations</b> of "West Bengal" found in data<br>
-        • <b>August 2025</b> data completely missing<br>
-        • <b>21.6%</b> duplicate records removed<br>
-        • Extreme volatility: CV = <b>220%</b>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="insight-card">
-        <div class="insight-title">🏆 Geographic Dominance</div>
-        <div class="insight-text">
-        • <b>Uttar Pradesh</b> leads with 17.7% of all enrolments<br>
-        • Top 3 states (UP, Maharashtra, Bihar) = <b>38%</b> of total<br>
-        • Thane & Pune are the top districts<br>
-        • <b>65 unique states</b> (including variations)
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown("""
-    <div class="insight-card">
-        <div class="insight-title">📊 Counter-Intuitive Weekend Pattern</div>
-        <div class="insight-text">
-        • Saturdays show <b>2.5x higher</b> enrolments than average<br>
-        • Weekend average: <b>542K</b> vs Weekday: <b>318K</b><br>
-        • Possible: Special camps or data batching<br>
-        • <b>Sunday</b> has lowest enrolments
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="insight-card">
-        <div class="insight-title">👶 Child Enrollment Concern</div>
-        <div class="insight-text">
-        • Only <b>9.8%</b> children (5-17 years) enrolled<br>
-        • <b>Maharashtra</b> lowest at 5.4% child enrolment<br>
-        • <b>Ladakh</b> highest at 23.5%<br>
-        • States with high volume have low child %
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+total = fdf["total"].sum()
+children = fdf["demo_age_5_17"].sum()
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("Total Enrollments", f"{total/1e6:.2f}M")
+c2.metric("Children (5-17)", f"{children/1e6:.2f}M", f"{children/total*100:.1f}% of total")
+c3.metric("States", fdf["state"].nunique())
+c4.metric("Districts", fdf["district"].nunique())
+c5.metric("Date Range", f"{d1.strftime('%b %Y')} – {d2.strftime('%b %Y')}")
 
 st.markdown("---")
 
-# KPIs
-st.markdown("## 📊 Key Metrics")
+# ── Tabs ────────────────────────────────────────────────────────────────────────
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 Trends", "🗺️ States", "📅 Seasonality", "🏘️ Districts", "🔵 Clusters"])
 
-kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
-
-total_enrolments = df_filtered['total_enrolments'].sum()
-total_children = df_filtered['demo_age_5_17'].sum()
-total_adults = df_filtered['demo_age_18_plus'].sum()
-
-with kpi1:
-    st.metric("Total Enrollments", f"{total_enrolments:,.0f}")
-with kpi2:
-    st.metric("Records Analyzed", f"{len(df_filtered):,.0f}")
-with kpi3:
-    st.metric("States Covered", f"{df_filtered['state'].nunique()}")
-with kpi4:
-    st.metric("Districts", f"{df_filtered['district'].nunique()}")
-with kpi5:
-    child_pct = (total_children / total_enrolments * 100) if total_enrolments > 0 else 0
-    st.metric("Child Enrollment %", f"{child_pct:.1f}%", f"{child_pct - 9.8:.1f}% vs avg")
-
-st.markdown("---")
-
-# Data Quality Alert
-if duplicates_removed > 0:
-    st.markdown(f"""
-    <div class="warning-box">
-        <b>⚠️ Data Cleaning Applied:</b> Removed {duplicates_removed:,} duplicate records ({duplicates_removed/(len(df)+duplicates_removed)*100:.1f}% of data). 
-        State names standardized (9 variations of "West Bengal" fixed). August 2025 data is missing from source.
-    </div>
-    """, unsafe_allow_html=True)
-
-# Tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "📈 Overview", "🗺️ State Analysis", "📅 Trends & Seasonality", "🏘️ Geography", "🔵 Clusters", "⚠️ Anomalies"
-])
-
+# ── Tab 1: Trends ──────────────────────────────────────────────────────────────
 with tab1:
-    st.subheader("Enrollment Overview")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Daily trend
-        fig = px.line(daily, x='date', y='total_enrolments',
-                      title="Daily Enrollment Trend",
-                      labels={'total_enrolments': 'Enrollments', 'date': 'Date'},
-                      template='plotly_white')
-        fig.add_scatter(x=daily['date'], y=daily['total_enrolments'].rolling(7).mean(),
-                        mode='lines', name='7-day MA', line=dict(color='#FF6B6B', width=3))
-        fig.update_traces(line=dict(width=2), selector=dict(name='Daily Total Enrollment'))
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(family='Inter', size=12),
-            title_font_size=16
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        # Age group breakdown
-        fig2 = go.Figure()
-        fig2.add_trace(go.Bar(name='Children (5-17)', x=daily['date'], y=daily['demo_age_5_17'],
-                              marker_color='#FF6B6B'))
-        fig2.add_trace(go.Bar(name='Adults (18+)', x=daily['date'], y=daily['demo_age_18_plus'],
-                              marker_color='#4ECDC4'))
-        fig2.update_layout(
-            barmode='stack',
-            title="Daily Enrollment by Age Group",
-            template='plotly_white',
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(family='Inter', size=12),
-            title_font_size=16
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-    
-    # Monthly trend
-    month_order = ['January','February','March','April','May','June','July','August','September','October','November','December']
-    monthly['month_name'] = pd.Categorical(monthly['month_name'], categories=month_order, ordered=True)
-    monthly = monthly.sort_values('month_name')
-    
-    fig3 = px.bar(monthly, x='month_name', y='total_enrolments',
-                  title="Monthly Enrollment Distribution",
-                  labels={'total_enrolments': 'Enrollments', 'month_name': 'Month'},
-                  template='plotly_white',
-                  color='total_enrolments',
-                  color_continuous_scale='Viridis')
-    fig3.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(family='Inter', size=12),
-        title_font_size=16
-    )
-    st.plotly_chart(fig3, use_container_width=True)
+    daily = fdf.groupby("date").agg(total=("total", "sum"), children=("demo_age_5_17", "sum")).reset_index()
+    daily["rolling7"] = daily["total"].rolling(7).mean()
+    daily["rolling7_children"] = daily["children"].rolling(7).mean()
 
+    # Anomaly detection
+    daily["z"] = (daily["total"] - daily["total"].rolling(30).mean()) / daily["total"].rolling(30).std()
+    anomalies = daily[daily["z"].abs() > 2.5]
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        show_anomalies = st.toggle("Highlight anomalies", value=True)
+    with col2:
+        metric = st.selectbox("Show", ["Total", "Children (5-17)", "Adults (18+)"], label_visibility="collapsed")
+
+    if metric == "Children (5-17)":
+        y_col, roll_col, label = "children", "rolling7_children", "Children (5-17)"
+    elif metric == "Adults (18+)":
+        daily["adults"] = daily["total"] - daily["children"]
+        daily["rolling7_adults"] = daily["adults"].rolling(7).mean()
+        y_col, roll_col, label = "adults", "rolling7_adults", "Adults (18+)"
+    else:
+        y_col, roll_col, label = "total", "rolling7", "Total"
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=daily["date"], y=daily[y_col], mode="lines",
+                             name=label, line=dict(color="#a8c7fa", width=1), opacity=0.6))
+    fig.add_trace(go.Scatter(x=daily["date"], y=daily[roll_col], mode="lines",
+                             name="7-day avg", line=dict(color="#4285f4", width=2.5)))
+    if show_anomalies and len(anomalies):
+        fig.add_trace(go.Scatter(x=anomalies["date"], y=anomalies[y_col], mode="markers",
+                                 name=f"Anomaly ({len(anomalies)})", marker=dict(color="#ea4335", size=8, symbol="x")))
+    fig.update_layout(title="Daily Enrollment Trend", template="plotly_white",
+                      legend=dict(orientation="h", y=1.1), margin=dict(t=50))
+    st.plotly_chart(fig, use_container_width=True)
+
+    if len(anomalies):
+        with st.expander(f"📋 {len(anomalies)} anomalous days (|z| > 2.5)"):
+            st.dataframe(
+                anomalies[["date", "total", "z"]].rename(columns={"z": "z_score"})
+                .assign(day=anomalies["date"].dt.day_name())
+                .sort_values("z_score", key=abs, ascending=False)
+                .style.format({"total": "{:,.0f}", "z_score": "{:.2f}"}),
+                use_container_width=True
+            )
+
+# ── Tab 2: States ──────────────────────────────────────────────────────────────
 with tab2:
-    st.subheader("State-Level Analysis")
-    
-    top_n = st.slider("Number of States to Display", 5, 30, 15)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        top_states = state_summary.head(top_n)
-        fig = px.bar(top_states, x='total_enrolments', y='state', orientation='h',
-                     title=f"Top {top_n} States by Enrollment",
-                     labels={'total_enrolments': 'Enrollments', 'state': 'State'},
-                     template='plotly_white',
-                     color='total_enrolments',
-                     color_continuous_scale='Blues')
-        fig.update_layout(yaxis=dict(autorange="reversed"), height=600,
-                         plot_bgcolor='rgba(0,0,0,0)',
-                         paper_bgcolor='rgba(0,0,0,0)',
-                         font=dict(family='Inter', size=12))
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        fig2 = px.bar(top_states, x='child_pct', y='state', orientation='h',
-                      title=f"Child Enrollment % (Top {top_n} States)",
-                      labels={'child_pct': 'Child %', 'state': 'State'},
-                      template='plotly_white',
-                      color='child_pct',
-                      color_continuous_scale='RdYlGn')
-        fig2.update_layout(yaxis=dict(autorange="reversed"), height=600,
-                          plot_bgcolor='rgba(0,0,0,0)',
-                          paper_bgcolor='rgba(0,0,0,0)',
-                          font=dict(family='Inter', size=12))
-        st.plotly_chart(fig2, use_container_width=True)
-    
-    # State table
-    st.subheader("Complete State Summary")
-    st.dataframe(
-        state_summary[['state','total_enrolments','total_children','total_adults','child_pct','num_districts','num_pincodes']].style.format({
-            'total_enrolments': '{:,.0f}',
-            'total_children': '{:,.0f}',
-            'total_adults': '{:,.0f}',
-            'child_pct': '{:.2f}%',
-            'num_districts': '{:.0f}',
-            'num_pincodes': '{:.0f}'
-        }).background_gradient(subset=['child_pct'], cmap='RdYlGn'),
-        use_container_width=True,
-        height=500
-    )
+    state_df = fdf.groupby("state").agg(
+        total=("total", "sum"),
+        children=("demo_age_5_17", "sum"),
+        districts=("district", "nunique"),
+    ).reset_index()
+    state_df["child_pct"] = state_df["children"] / state_df["total"] * 100
+    state_df = state_df.sort_values("total", ascending=False).reset_index(drop=True)
 
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        top_n = st.slider("Top N states", 5, len(state_df), 15)
+        sort_by = st.radio("Sort by", ["Total enrollment", "Child %"])
+    
+    subset = state_df.head(top_n) if sort_by == "Total enrollment" else state_df.nlargest(top_n, "child_pct")
+
+    with col2:
+        if sort_by == "Total enrollment":
+            fig = px.bar(subset.sort_values("total"), x="total", y="state", orientation="h",
+                         color="child_pct", color_continuous_scale="RdYlGn",
+                         labels={"total": "Enrollments", "child_pct": "Child %"},
+                         title=f"Top {top_n} States — colored by Child %")
+            fig.update_layout(yaxis_title="", coloraxis_colorbar_title="Child %",
+                              template="plotly_white", margin=dict(l=10))
+        else:
+            fig = px.bar(subset.sort_values("child_pct"), x="child_pct", y="state", orientation="h",
+                         color="total", color_continuous_scale="Blues",
+                         labels={"child_pct": "Child Enrollment %", "total": "Total"},
+                         title=f"Top {top_n} States — by Child Enrollment %")
+            fig.update_layout(yaxis_title="", coloraxis_colorbar_title="Total",
+                              template="plotly_white", margin=dict(l=10))
+        st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander("📋 Full State Table"):
+        st.dataframe(
+            state_df.style.format({"total": "{:,.0f}", "children": "{:,.0f}", "child_pct": "{:.1f}%"})
+            .background_gradient(subset=["child_pct"], cmap="RdYlGn"),
+            use_container_width=True, height=400
+        )
+
+# ── Tab 3: Seasonality ─────────────────────────────────────────────────────────
 with tab3:
-    st.subheader("Temporal Patterns & Seasonality")
-    
     col1, col2 = st.columns(2)
-    
+
     with col1:
         # Weekday pattern
-        weekly = df.groupby('day_name').agg({'total_enrolments': 'sum'}).reset_index()
-        day_order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-        weekly['day_name'] = pd.Categorical(weekly['day_name'], categories=day_order, ordered=True)
-        weekly = weekly.sort_values('day_name')
-        
-        # Add day count for average
-        day_counts = df.groupby('day_name')['date'].nunique().reset_index()
-        day_counts.columns = ['day_name', 'num_days']
-        weekly = weekly.merge(day_counts, on='day_name')
-        weekly['avg_per_day'] = weekly['total_enrolments'] / weekly['num_days']
-        
-        colors = ['#4ECDC4' if d not in ['Saturday', 'Sunday'] else '#FF6B6B' for d in day_order]
-        
-        fig = px.bar(weekly, x='day_name', y='avg_per_day',
-                      title="Average Daily Enrollment by Weekday",
-                      labels={'avg_per_day': 'Avg Enrollments/Day', 'day_name': 'Day'},
-                      template='plotly_white')
-        fig.update_traces(marker_color=['#4ECDC4', '#4ECDC4', '#4ECDC4', '#4ECDC4', '#4ECDC4', '#FF6B6B', '#FF6B6B'])
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(family='Inter', size=12),
-            title_font_size=16
-        )
+        DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        wkday = fdf.groupby("day_name")["total"].sum().reindex(DAY_ORDER).reset_index()
+        day_counts = fdf.groupby("day_name")["date"].nunique().reindex(DAY_ORDER)
+        wkday["avg"] = wkday["total"] / day_counts.values
+        colors = ["#fbbc04" if d in ("Saturday", "Sunday") else "#4285f4" for d in DAY_ORDER]
+
+        fig = go.Figure(go.Bar(x=wkday["day_name"], y=wkday["avg"],
+                               marker_color=colors, text=wkday["avg"].apply(lambda x: f"{x/1e3:.0f}K"),
+                               textposition="outside"))
+        fig.update_layout(title="Avg Enrollments per Day of Week<br><sup>🟡 Saturday is 2.5x higher than weekdays</sup>",
+                          template="plotly_white", yaxis_title="Avg daily enrollments", margin=dict(t=70))
         st.plotly_chart(fig, use_container_width=True)
-        
-        st.markdown("""
-        <div class="insight-card">
-            <div class="insight-title">⚠️ Weekend Anomaly</div>
-            <div class="insight-text">
-            Saturday shows <b>2.5x higher</b> average enrolments than weekdays! 
-            This contradicts typical expectations of lower weekend activity.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+
     with col2:
-        # Child % by month
-        fig2 = px.line(monthly, x='month_name', y='child_pct',
-                       title="Child Enrollment % by Month",
-                       labels={'child_pct': 'Child %', 'month_name': 'Month'},
-                       template='plotly_white',
-                       markers=True)
-        fig2.update_traces(line=dict(color='#FF6B6B', width=3), marker=dict(size=10))
+        # Monthly trend
+        MONTH_ORDER = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+        monthly = fdf.copy()
+        monthly["month_name"] = monthly["date"].dt.month_name()
+        mon = monthly.groupby("month_name").agg(total=("total","sum"), child_pct=("child_pct","mean")).reset_index()
+        mon["month_name"] = pd.Categorical(mon["month_name"], MONTH_ORDER, ordered=True)
+        mon = mon.sort_values("month_name")
+
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(x=mon["month_name"], y=mon["total"], name="Enrollments",
+                              marker_color="#4285f4", yaxis="y"))
+        fig2.add_trace(go.Scatter(x=mon["month_name"], y=mon["child_pct"], name="Child %",
+                                  mode="lines+markers", line=dict(color="#ea4335", width=2),
+                                  yaxis="y2"))
         fig2.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(family='Inter', size=12),
-            title_font_size=16
+            title="Monthly Enrollments + Child %",
+            template="plotly_white",
+            yaxis=dict(title="Enrollments"),
+            yaxis2=dict(title="Child %", overlaying="y", side="right"),
+            legend=dict(orientation="h", y=1.1),
         )
         st.plotly_chart(fig2, use_container_width=True)
-        
-        # Volatility stats
-        cv = daily['total_enrolments'].std() / daily['total_enrolments'].mean() * 100
-        st.markdown(f"""
-        <div class="danger-box">
-            <b>📊 Volatility Analysis</b><br>
-            Coefficient of Variation: <b>{cv:.1f}%</b> (Extreme)<br>
-            Peak Day: <b>{daily['total_enrolments'].max():,}</b><br>
-            Lowest Day: <b>{daily['total_enrolments'].min():,}</b><br>
-            Ratio: <b>{daily['total_enrolments'].max()/daily['total_enrolments'].min():.0f}x</b>
-        </div>
-        """, unsafe_allow_html=True)
 
+    # Heatmap: month × weekday
+    st.subheader("Enrollment Heatmap: Month × Weekday")
+    heat = fdf.copy()
+    heat["month_name"] = pd.Categorical(heat["date"].dt.month_name(), MONTH_ORDER, ordered=True)
+    pivot = heat.groupby(["month_name", "day_name"])["total"].sum().unstack(fill_value=0).reindex(columns=DAY_ORDER)
+    
+    fig3 = px.imshow(pivot, color_continuous_scale="Blues", aspect="auto",
+                     labels=dict(color="Enrollments"), title="Total Enrollments by Month & Weekday")
+    fig3.update_layout(template="plotly_white")
+    st.plotly_chart(fig3, use_container_width=True)
+
+# ── Tab 4: Districts ───────────────────────────────────────────────────────────
 with tab4:
-    st.subheader("District & Pincode Analysis")
-    
-    top_districts = district_summary.head(25)
-    
-    fig = px.bar(top_districts, x='total_enrolments', y='district', color='state',
-                 orientation='h', title="Top 25 Districts by Enrollment",
-                 labels={'total_enrolments': 'Enrollments', 'district': 'District'},
-                 template='plotly_white',
-                 color_discrete_sequence=px.colors.qualitative.Set3)
-    fig.update_layout(yaxis=dict(autorange="reversed"), height=800,
-                     plot_bgcolor='rgba(0,0,0,0)',
-                     paper_bgcolor='rgba(0,0,0,0)',
-                     font=dict(family='Inter', size=12))
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Pincode analysis
-    st.subheader("Top 15 Pincodes")
-    pincode_top = df.groupby('pincode').agg({
-        'total_enrolments': 'sum',
-        'state': 'first',
-        'district': 'first'
-    }).reset_index().sort_values('total_enrolments', ascending=False).head(15)
-    
-    st.dataframe(
-        pincode_top.style.format({'total_enrolments': '{:,.0f}'}),
-        use_container_width=True
-    )
+    dist = fdf.groupby(["state", "district"]).agg(
+        total=("total", "sum"),
+        child_pct=("child_pct", "mean"),
+    ).reset_index().sort_values("total", ascending=False)
 
-with tab5:
-    st.subheader("State Clustering Analysis")
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        top_d = st.slider("Top N districts", 10, 50, 20)
+        state_filter = st.multiselect("Filter by State", sorted(dist["state"].unique()),
+                                       placeholder="All states")
     
-    fig = px.scatter(state_summary, x='total_enrolments', y='child_pct',
-                     color='cluster', size='total_enrolments',
-                     hover_name='state', title="State Clusters: Enrollment vs Child %",
-                     labels={'total_enrolments': 'Total Enrollments', 'child_pct': 'Child %'},
-                     template='plotly_white',
+    d_subset = dist[dist["state"].isin(state_filter)] if state_filter else dist
+    d_subset = d_subset.head(top_d)
+
+    with col2:
+        fig = px.bar(d_subset.sort_values("total"), x="total", y="district",
+                     orientation="h", color="state",
+                     hover_data={"child_pct": ":.1f"},
+                     labels={"total": "Enrollments", "district": ""},
+                     title=f"Top {top_d} Districts",
                      color_discrete_sequence=px.colors.qualitative.Set2)
-    fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(family='Inter', size=12)
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.subheader("Cluster Profiles")
-    
-    for c in sorted(state_summary['cluster'].unique()):
-        subset = state_summary[state_summary['cluster'] == c]
-        with st.expander(f"Cluster {c} ({len(subset)} states) - Avg: {subset['total_enrolments'].mean():,.0f} enrolments, {subset['child_pct'].mean():.1f}% child"):
-            st.write(', '.join(subset['state'].tolist()))
+        fig.update_layout(template="plotly_white", height=max(400, top_d * 25),
+                          legend=dict(orientation="v"), yaxis_title="")
+        st.plotly_chart(fig, use_container_width=True)
 
-with tab6:
-    st.subheader("Anomaly Detection")
-    
-    # Daily anomalies using rolling statistics
-    daily['rolling_mean'] = daily['total_enrolments'].rolling(7).mean()
-    daily['rolling_std'] = daily['total_enrolments'].rolling(7).std()
-    daily['z_score'] = (daily['total_enrolments'] - daily['rolling_mean']) / daily['rolling_std']
-    daily['anomaly'] = daily['z_score'].abs() > 2
-    
-    anomalies = daily[daily['anomaly']].copy()
-    
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=daily['date'], y=daily['total_enrolments'],
-                              mode='lines', name='Normal', line=dict(color='#4ECDC4', width=2)))
-    if len(anomalies) > 0:
-        fig.add_trace(go.Scatter(x=anomalies['date'], y=anomalies['total_enrolments'],
-                                  mode='markers', name='Anomaly', 
-                                  marker=dict(color='#FF6B6B', size=12, symbol='x')))
-    fig.update_layout(
-        title="Daily Enrollment with Anomalies (|Z-score| > 2)",
-        template='plotly_white',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(family='Inter', size=12)
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    if len(anomalies) > 0:
-        st.markdown(f"""
-        <div class="danger-box">
-            <b>⚠️ {len(anomalies)} Anomalous Days Detected</b><br>
-            These days show enrollment patterns significantly different from the 7-day rolling average.
-        </div>
-        """, unsafe_allow_html=True)
-        
-        anomalies['day_name'] = anomalies['date'].dt.day_name()
-        st.dataframe(
-            anomalies[['date', 'day_name', 'total_enrolments', 'z_score']].style.format({
-                'z_score': '{:.2f}',
-                'total_enrolments': '{:,.0f}'
-            }),
-            use_container_width=True
-        )
-    else:
-        st.markdown("""
-        <div class="success-box">
-            <b>✅ No significant anomalies detected</b><br>
-            All daily enrollment values are within normal range (Z-score < 2).
-        </div>
-        """, unsafe_allow_html=True)
+# ── Tab 5: Clusters ────────────────────────────────────────────────────────────
+with tab5:
+    state_cl = df.groupby("state").agg(
+        total=("total","sum"), children=("demo_age_5_17","sum"),
+        districts=("district","nunique"), pincodes=("pincode","nunique"),
+    ).reset_index()
+    state_cl["child_pct"] = state_cl["children"] / state_cl["total"] * 100
 
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style="text-align: center; color: #666; padding: 20px;">
-    <b>Built with ❤️ using Streamlit</b><br>
-    Data: Aadhaar Demographics (March - December 2025) | 36M+ Records Analyzed
-</div>
-""", unsafe_allow_html=True)
+    features = ["total", "children", "child_pct", "districts"]
+    scaler = StandardScaler()
+    X = scaler.fit_transform(state_cl[features])
+    
+    n_clusters = st.slider("Number of clusters", 2, 6, 4)
+    state_cl["cluster"] = KMeans(n_clusters=n_clusters, random_state=42, n_init=10).fit_predict(X).astype(str)
+
+    fig = px.scatter(state_cl, x="total", y="child_pct", color="cluster",
+                     size="total", size_max=60, hover_name="state",
+                     hover_data={"total": ":,.0f", "child_pct": ":.1f", "districts": True},
+                     labels={"total": "Total Enrollments", "child_pct": "Child %"},
+                     title="State Clusters: Volume vs Child Enrollment %",
+                     color_discrete_sequence=px.colors.qualitative.Set1)
+    fig.update_layout(template="plotly_white")
+    st.plotly_chart(fig, use_container_width=True)
+
+    for c in sorted(state_cl["cluster"].unique()):
+        sub = state_cl[state_cl["cluster"] == c]
+        with st.expander(f"Cluster {c} · {len(sub)} states · avg {sub['total'].mean()/1e6:.1f}M enrolments · {sub['child_pct'].mean():.1f}% child"):
+            st.write(", ".join(sorted(sub["state"].tolist())))
