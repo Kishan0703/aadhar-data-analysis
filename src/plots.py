@@ -24,7 +24,7 @@ sns.set_palette('husl')
 colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F']
 
 # Load data
-df = pd.read_csv('data.csv', dtype={
+df = pd.read_csv('../data/raw/data.csv', dtype={
     'state': 'category',
     'district': 'category',
     'pincode': 'Int32',
@@ -74,7 +74,7 @@ ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: format(int(x), ','))
 ax.axvspan(pd.Timestamp('2025-08-01'), pd.Timestamp('2025-08-31'), alpha=0.2, color='red', label='Missing August Data')
 
 plt.tight_layout()
-plt.savefig('output/plot_daily_trend.png', dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig('../output/plots/plot_daily_trend.png', dpi=150, bbox_inches='tight', facecolor='white')
 plt.close()
 print("✓ Saved: plot_daily_trend.png")
 
@@ -109,7 +109,7 @@ ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: format(int(x), ','))
 
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
-plt.savefig('output/plot_monthly_distribution.png', dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig('../output/plots/plot_monthly_distribution.png', dpi=150, bbox_inches='tight', facecolor='white')
 plt.close()
 print("✓ Saved: plot_monthly_distribution.png")
 
@@ -144,7 +144,7 @@ ax.set_title('Top 10 States by Total Enrolments', fontsize=16, fontweight='bold'
 ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: format(int(x), ',')))
 
 plt.tight_layout()
-plt.savefig('output/plot_top_states.png', dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig('../output/plots/plot_top_states.png', dpi=150, bbox_inches='tight', facecolor='white')
 plt.close()
 print("✓ Saved: plot_top_states.png")
 
@@ -171,7 +171,7 @@ ax.legend(loc='upper right', fontsize=11)
 ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: format(int(x), ',')))
 
 plt.tight_layout()
-plt.savefig('output/plot_age_distribution.png', dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig('../output/plots/plot_age_distribution.png', dpi=150, bbox_inches='tight', facecolor='white')
 plt.close()
 print("✓ Saved: plot_age_distribution.png")
 
@@ -210,7 +210,7 @@ ax.set_ylabel('State', fontweight='bold')
 ax.set_title('Top 15 States by Child Enrollment Percentage', fontsize=16, fontweight='bold', pad=20)
 
 plt.tight_layout()
-plt.savefig('output/plot_child_enrollment_pct.png', dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig('../output/plots/plot_child_enrollment_pct.png', dpi=150, bbox_inches='tight', facecolor='white')
 plt.close()
 print("✓ Saved: plot_child_enrollment_pct.png")
 
@@ -255,7 +255,7 @@ legend_elements = [Patch(facecolor='#4ECDC4', edgecolor='black', label='Weekdays
 ax.legend(handles=legend_elements, loc='upper right', fontsize=11)
 
 plt.tight_layout()
-plt.savefig('output/plot_weekday_pattern.png', dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig('../output/plots/plot_weekday_pattern.png', dpi=150, bbox_inches='tight', facecolor='white')
 plt.close()
 print("✓ Saved: plot_weekday_pattern.png")
 
@@ -290,7 +290,7 @@ ax.set_title('Top 10 Districts by Total Enrolments', fontsize=16, fontweight='bo
 ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: format(int(x), ',')))
 
 plt.tight_layout()
-plt.savefig('output/plot_top_districts.png', dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig('../output/plots/plot_top_districts.png', dpi=150, bbox_inches='tight', facecolor='white')
 plt.close()
 print("✓ Saved: plot_top_districts.png")
 
@@ -323,7 +323,7 @@ ax.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
 ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: format(int(x), ',')))
 
 plt.tight_layout()
-plt.savefig('output/plot_volatility.png', dpi=150, bbox_inches='tight', facecolor='white')
+plt.savefig('../output/plots/plot_volatility.png', dpi=150, bbox_inches='tight', facecolor='white')
 plt.close()
 print("✓ Saved: plot_volatility.png")
 

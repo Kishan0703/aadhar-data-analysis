@@ -21,7 +21,7 @@ STATE_MAP = {
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data.csv")
+    df = pd.read_csv("data/raw/data.csv")
     df["date"] = pd.to_datetime(df["date"], format="%d-%m-%Y")
     df = df.rename(columns={"demo_age_17_": "demo_age_18_plus"})
     df["demo_age_5_17"] = df["demo_age_5_17"].fillna(0).astype(int)

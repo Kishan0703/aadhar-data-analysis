@@ -155,3 +155,10 @@ Thumbs.db
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project-specific directories
+data/
+venv/
+__pycache__/
+*.pyc
+.DS_Store

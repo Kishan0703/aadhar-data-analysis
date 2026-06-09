@@ -22,7 +22,7 @@ print("AADHAAR DEMOGRAPHICS - DEEP ANALYSIS")
 print("=" * 60)
 
 # Load data
-df = pd.read_csv('data.csv', dtype={
+df = pd.read_csv('../data/raw/data.csv', dtype={
     'state': 'category',
     'district': 'category',
     'pincode': 'Int32',
@@ -329,20 +329,20 @@ print("7. SAVING PROCESSED DATA")
 print("=" * 60)
 
 # Save cleaned daily data
-daily.to_csv('output/daily_enrollment_cleaned.csv', index=False)
+daily.to_csv('../output/exports/daily_enrollment_cleaned.csv', index=False)
 print("✓ Saved cleaned daily enrollment data")
 
 # Save cleaned state summary
-valid_states.to_csv('output/state_summary_cleaned.csv', index=False)
+valid_states.to_csv('../output/exports/state_summary_cleaned.csv', index=False)
 print("✓ Saved cleaned state summary")
 
 # Save district summary
-district_summary.to_csv('output/district_summary_cleaned.csv', index=False)
+district_summary.to_csv('../output/exports/district_summary_cleaned.csv', index=False)
 print("✓ Saved cleaned district summary")
 
 # Save insights
 insights_df = pd.DataFrame(insights)
-insights_df.to_csv('output/key_insights.csv', index=False)
+insights_df.to_csv('../output/exports/key_insights.csv', index=False)
 print("✓ Saved key insights")
 
 print("\n" + "=" * 60)
