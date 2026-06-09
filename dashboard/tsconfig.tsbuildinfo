@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/clusterstab.tsx","./src/components/districtstab.tsx","./src/components/forecasttab.tsx","./src/components/kpicards.tsx","./src/components/seasonalitytab.tsx","./src/components/sidebar.tsx","./src/components/statestab.tsx","./src/components/trendstab.tsx","./src/utils/kmeans.ts"],"version":"5.7.3"}
